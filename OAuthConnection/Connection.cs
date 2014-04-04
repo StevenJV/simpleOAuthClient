@@ -18,38 +18,38 @@ namespace OAuthConnection
         private readonly Dictionary<string, string> _baseURL = new Dictionary<string, string>()
         {
             {"twitter",  "https://api.twitter.com"},
-            {"grc", ""},
+            {"grc", "https://api.marlin.test"},
             {"box", "https://app.box.com"}
         };
 
         private readonly Dictionary<string, string> _connectionCallbackBaseUrl = new Dictionary<string, string>()
         {
             {"twitter", "https://localhost"},
-            {"grc", ""},
+            {"grc", "http://localhost"},
             {"box", "http://localhost"},
         };
 
         private readonly Dictionary<string, string> _connectionCallbackEndpoint = new Dictionary<string, string>()
         {
             {"twitter", "/twitterSignin"},
-            {"grc", ""},
+            {"grc", "/grcauthorize"},
             {"box", "/boxauthorize"},
         };
 
         private readonly Dictionary<string, string> _consumerKey = new Dictionary<string, string>()
         {
             {"twitter",  "VALUE REMOVED"},
-            {"grc", ""},
+            {"grc", "VALUE REMOVED"},
             {"box", "VALUE REMOVED"},
         };
 
         private readonly Dictionary<string, string> _consumerSecret = new Dictionary<string, string>()
         {
             {"twitter",  "VALUE REMOVED"},
-            {"grc", ""},
+            {"grc", "VALUE REMOVED"},
             {"box", "VALUE REMOVED"},
         };
-         
+       
         private readonly Dictionary<string, string> _resourceEndpoint = new Dictionary<string, string>()
         {
             {"twitter",  "/oauth/authorize"},
@@ -59,7 +59,7 @@ namespace OAuthConnection
         private readonly Dictionary<string, string> _authorizeEndpoint = new Dictionary<string, string>()
         {
             {"twitter",  "/oauth/authorize?oauth_token={0}&oauth_callback={1}"}, //todo: move twitter parameters
-            {"grc", ""},
+            {"grc", "/oauth2/authorize"},
             {"box", "/api/oauth2/authorize"},
         };
 
@@ -94,6 +94,7 @@ namespace OAuthConnection
             var client = new RestClient(baseURL + requestTokenUrl);
             var request = new RestRequest(Method.GET);
             //todo: create dictionary for parameter types, mapping to values. 
+            request.AddParameter("tenant", "specflow");  // for grc
             request.AddParameter("response_type", "code");
             request.AddParameter("client_id", consumerKey);
             request.AddParameter("redirect_uri", callbackURL);
@@ -117,7 +118,7 @@ namespace OAuthConnection
             }))
             {
                 // Launch a default browser to get the user's approval
-                System.Diagnostics.Process.Start(ensureTrailingBackslash(url));
+                System.Diagnostics.Process.Start(url);
                 // Wait until the user decides whether to grant access
                 resetEvent.WaitOne();
             }

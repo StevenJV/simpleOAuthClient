@@ -10,7 +10,7 @@ namespace simpleOAuthClient.Tests
         [Test]
         public void FirstConnetionShouldGetGrantCode()
         {
-            var thisConnection = new Connection("box");
+            var thisConnection = new Connection("grc");
             thisConnection.FetchGrantCode();
             Assert.IsTrue(thisConnection.HasGrantCode());
         }
