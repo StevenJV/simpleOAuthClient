@@ -19,7 +19,7 @@ namespace OAuthConnection
         {
             {"twitter",  "https://api.twitter.com"},
             {"grc", ""},
-            {"box", "https://app.box.com/"}
+            {"box", "https://app.box.com"}
         };
 
         private readonly Dictionary<string, string> _connectionCallbackBaseUrl = new Dictionary<string, string>()
@@ -38,17 +38,18 @@ namespace OAuthConnection
 
         private readonly Dictionary<string, string> _consumerKey = new Dictionary<string, string>()
         {
-            {"twitter",  " KEY REMOVED "},
+            {"twitter",  "VALUE REMOVED"},
             {"grc", ""},
-            {"box", " KEY REMOVED "},
+            {"box", "VALUE REMOVED"},
         };
 
         private readonly Dictionary<string, string> _consumerSecret = new Dictionary<string, string>()
         {
-            {"twitter",  " KEY REMOVED "},
+            {"twitter",  "VALUE REMOVED"},
             {"grc", ""},
-            {"box", " KEY REMOVED "},
+            {"box", "VALUE REMOVED"},
         };
+         
         private readonly Dictionary<string, string> _resourceEndpoint = new Dictionary<string, string>()
         {
             {"twitter",  "/oauth/authorize"},
@@ -57,9 +58,9 @@ namespace OAuthConnection
         };
         private readonly Dictionary<string, string> _authorizeEndpoint = new Dictionary<string, string>()
         {
-            {"twitter",  "/oauth/request_token"},
+            {"twitter",  "/oauth/authorize?oauth_token={0}&oauth_callback={1}"}, //todo: move twitter parameters
             {"grc", ""},
-            {"box", "/api/oauth2/authorize?response_type=code&client_id={0}&state=authenticated&redirect_uri={1}"}
+            {"box", "/api/oauth2/authorize"},
         };
 
         public Connection(string providerName)
@@ -90,24 +91,18 @@ namespace OAuthConnection
 
         private string magicNetworkStuffToGetGrantCode(string baseURL, string requestTokenUrl, string consumerKey, string callbackURL)
         {
-            // using RestSharp 
-            var client = new RestClient(baseURL);
-            var request = new RestRequest(
-                string.Format(
-                requestTokenUrl,
-                consumerKey, 
-                callbackURL
-                ), Method.POST);
+            var client = new RestClient(baseURL + requestTokenUrl);
+            var request = new RestRequest(Method.GET);
+            //todo: create dictionary for parameter types, mapping to values. 
+            request.AddParameter("response_type", "code");
+            request.AddParameter("client_id", consumerKey);
+            request.AddParameter("redirect_uri", callbackURL);
+            request.AddParameter("state", "authenticated");
 
             bool hasUserGrantedAccess = false;
-
             var url = client.BuildUri(request).ToString();
-
-
-            // Set up a local HTTP server to accept callback
             string authCode = null;
             var resetEvent = new ManualResetEvent(false);
-
             using (var svr = SimpleServer.Create(callbackURL, context =>
             {
                 var qs = HttpUtility.ParseQueryString(context.Request.RawUrl);
@@ -115,33 +110,19 @@ namespace OAuthConnection
 
                 if (!string.IsNullOrEmpty(authCode))
                 {
-                    // The user has granted access
                     hasUserGrantedAccess = true;
                 }
-
                 // Resume execution...
                 resetEvent.Set();
-
             }))
             {
                 // Launch a default browser to get the user's approval
-                System.Diagnostics.Process.Start(url);
-
+                System.Diagnostics.Process.Start(ensureTrailingBackslash(url));
                 // Wait until the user decides whether to grant access
                 resetEvent.WaitOne();
-
             }
 
-            if ( hasUserGrantedAccess)
-            {
-                return authCode;
-            }
-            else
-            {
-                return null;
-            }
-
-
+            return (hasUserGrantedAccess ? authCode : null) ; 
         }
 
         private string ensureTrailingBackslash(string url)
